@@ -3,7 +3,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/a
 // Pet endpoints
 export const petAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/pets/`);
+    const response = await fetch(`${API_BASE_URL}/pets`, {
+      redirect: 'follow'
+    });
     if (!response.ok) throw new Error('Failed to fetch pets');
     return response.json();
   },
@@ -15,12 +17,16 @@ export const petAPI = {
   },
   
   create: async (data) => {
-    const response = await fetch(`${API_BASE_URL}/pets/`, {
+    const response = await fetch(`${API_BASE_URL}/pets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      redirect: 'follow'
     });
-    if (!response.ok) throw new Error('Failed to create pet');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to create pet');
+    }
     return response.json();
   },
   

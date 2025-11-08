@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
 from app.database import get_database
-from bson import ObjectId
 
 router = APIRouter()
 
@@ -19,8 +18,9 @@ async def get_products(
     if species:
         query["suitable_for"] = species
     
+    products_data = await db.products.find(query)
     products = []
-    async for product in db.products.find(query):
+    for product in products_data:
         product["id"] = str(product.pop("_id"))
         products.append(product)
     
@@ -29,12 +29,7 @@ async def get_products(
 @router.get("/products/{product_id}")
 async def get_product(product_id: str, db=Depends(get_database)):
     """Get single product details"""
-    from bson import ObjectId
-    
-    if not ObjectId.is_valid(product_id):
-        raise HTTPException(status_code=400, detail="Invalid product ID")
-    
-    product = await db.products.find_one({"_id": ObjectId(product_id)})
+    product = await db.products.find_one({"_id": product_id})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     

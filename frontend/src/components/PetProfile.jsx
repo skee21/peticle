@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Camera, Calendar, Weight } from 'lucide-react';
+import { Camera, Calendar, Scale } from 'lucide-react';
 
 export default function PetProfile({ pet, onUpdate }) {
   return (
@@ -19,7 +19,7 @@ export default function PetProfile({ pet, onUpdate }) {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <Weight className="text-blue-600 mb-2" />
+            <Scale className="text-blue-600 mb-2" />
             <p className="text-sm text-gray-600">Weight</p>
             <p className="text-xl font-semibold">{pet.weight} kg</p>
           </div>

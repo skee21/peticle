@@ -18,6 +18,10 @@ class JSONDatabase:
     @property
     def users(self):
         return JSONCollection(self._repo, "users")
+    
+    @property
+    def products(self):
+        return JSONCollection(self._repo, "products")
 
 
 class JSONCollection:
@@ -39,6 +43,9 @@ class JSONCollection:
     
     async def delete_one(self, query):
         return await self._repo.delete_one(self._collection, query)
+    
+    async def distinct(self, field: str):
+        return await self._repo.distinct(self._collection, field)
 
 
 _db_instance = None

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { usePetStore } from '@/lib/store';
 import { 
-  Calendar, Weight, Heart, Activity, Edit2, 
+  Calendar, Scale, Heart, Activity, Edit2, 
   Video, ShoppingBag, MapPin, Clock 
 } from 'lucide-react';
 import VideoUploader from '@/components/VideoUploader';
@@ -12,12 +12,26 @@ import VetLocator from '@/components/VetLocator';
 
 export default function PetProfile() {
   const params = useParams();
-  const { pets, selectPet, currentPet } = usePetStore();
+  const { selectPet, currentPet } = usePetStore();
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    selectPet(params.id);
+    const loadPet = async () => {
+      setLoading(true);
+      await selectPet(params.id);
+      setLoading(false);
+    };
+    loadPet();
   }, [params.id, selectPet]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <p className="text-xl text-gray-600">Loading pet information...</p>
+      </div>
+    );
+  }
 
   if (!currentPet) {
     return (
@@ -83,7 +97,7 @@ export default function PetProfile() {
                   <p className="text-xl font-bold">{currentPet.age} years</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <Weight className="w-5 h-5 text-green-600 mb-2" />
+                  <Scale className="w-5 h-5 text-green-600 mb-2" />
                   <p className="text-sm text-gray-600">Weight</p>
                   <p className="text-xl font-bold">{currentPet.weight} kg</p>
                 </div>

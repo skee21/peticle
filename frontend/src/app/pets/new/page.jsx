@@ -34,7 +34,20 @@ export default function NewPetPage() {
     setError(null);
 
     try {
-      const result = await petAPI.create(formData);
+      // Clean up form data - convert empty strings to null for optional fields
+      const cleanedData = {
+        name: formData.name,
+        species: formData.species,
+        breed: formData.breed,
+        gender: formData.gender,
+        age: formData.age ? parseInt(formData.age) : null,
+        weight: formData.weight ? parseFloat(formData.weight) : null,
+        dob: formData.dob || null,
+        color: formData.color || null,
+        description: formData.description || null,
+      };
+      
+      const result = await petAPI.create(cleanedData);
       router.push('/dashboard');
     } catch (err) {
       setError(err.message);
