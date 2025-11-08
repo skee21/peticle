@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from datetime import datetime
-from bson import ObjectId
 
 class VideoAnalysis(BaseModel):
     id: Optional[str] = Field(alias="_id", default=None)
@@ -21,4 +20,3 @@ class VideoAnalysis(BaseModel):
 
     class Config:
         populate_by_name = True
-        json_encoders = {ObjectId: str}

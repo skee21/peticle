@@ -35,7 +35,12 @@ export default function NewPetPage() {
 
     try {
       const result = await petAPI.create(formData);
-      router.push('/dashboard');
+      // Redirect to the new pet's detail page
+      if (result.id) {
+        router.push(`/pets/${result.id}`);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

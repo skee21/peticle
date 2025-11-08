@@ -5,7 +5,6 @@ from app.schemas.video import VideoAnalysisResponse, VideoUploadResponse
 from app.services.video_processor import process_video
 from app.services.ai_analysis import analyze_video
 from app.services.storage import save_video
-from bson import ObjectId
 import os
 
 router = APIRouter()
@@ -18,11 +17,8 @@ async def upload_video(
     db=Depends(get_database)
 ):
     """Upload video for AI analysis"""
-    if not ObjectId.is_valid(pet_id):
-        raise HTTPException(status_code=400, detail="Invalid pet ID")
-    
     # Check if pet exists
-    pet = await db.pets.find_one({"_id": ObjectId(pet_id)})
+    pet = db.find_one("pets", {"_id": pet_id})
     if not pet:
         raise HTTPException(status_code=404, detail="Pet not found")
     
@@ -43,8 +39,8 @@ async def upload_video(
         "recommendations": []
     }
     
-    result = await db.videos.insert_one(video_record)
-    video_id = str(result.inserted_id)
+    result = db.insert_one("videos", video_record)
+    video_id = result["inserted_id"]
     
     # Add background task for video analysis
     if background_tasks:
@@ -66,8 +62,9 @@ async def analyze_video_background(video_id: str, video_path: str, pet_id: str, 
     """Background task to analyze video"""
     try:
         # Update status to processing
-        await db.videos.update_one(
-            {"_id": ObjectId(video_id)},
+        db.update_one(
+            "videos",
+            {"_id": video_id},
             {"$set": {"analysis_status": "processing"}}
         )
         
@@ -75,8 +72,9 @@ async def analyze_video_background(video_id: str, video_path: str, pet_id: str, 
         analysis_result = await analyze_video(video_path)
         
         # Update video record with analysis
-        await db.videos.update_one(
-            {"_id": ObjectId(video_id)},
+        db.update_one(
+            "videos",
+            {"_id": video_id},
             {"$set": {
                 "analysis_status": "completed",
                 "insights": analysis_result["insights"],
@@ -88,15 +86,17 @@ async def analyze_video_background(video_id: str, video_path: str, pet_id: str, 
         )
         
         # Update pet's video count
-        await db.pets.update_one(
-            {"_id": ObjectId(pet_id)},
+        db.update_one(
+            "pets",
+            {"_id": pet_id},
             {"$inc": {"videos_analyzed": 1}}
         )
         
     except Exception as e:
         # Mark as failed
-        await db.videos.update_one(
-            {"_id": ObjectId(video_id)},
+        db.update_one(
+            "videos",
+            {"_id": video_id},
             {"$set": {"analysis_status": "failed"}}
         )
         print(f"Error analyzing video: {str(e)}")
@@ -104,25 +104,19 @@ async def analyze_video_background(video_id: str, video_path: str, pet_id: str, 
 @router.get("/{video_id}")
 async def get_video_analysis(video_id: str, db=Depends(get_database)):
     """Get video analysis results"""
-    if not ObjectId.is_valid(video_id):
-        raise HTTPException(status_code=400, detail="Invalid video ID")
-    
-    video = await db.videos.find_one({"_id": ObjectId(video_id)})
+    video = db.find_one("videos", {"_id": video_id})
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
     
-    video["id"] = str(video.pop("_id"))
+    video["id"] = video.pop("_id", video.get("id"))
     return video
 
 @router.get("/pet/{pet_id}/videos")
 async def get_pet_videos(pet_id: str, db=Depends(get_database)):
     """Get all videos for a specific pet"""
-    if not ObjectId.is_valid(pet_id):
-        raise HTTPException(status_code=400, detail="Invalid pet ID")
-    
     videos = []
-    async for video in db.videos.find({"pet_id": pet_id}):
-        video["id"] = str(video.pop("_id"))
+    for video in db.find("videos", {"pet_id": pet_id}):
+        video["id"] = video.pop("_id", video.get("id"))
         videos.append(video)
     
     return videos

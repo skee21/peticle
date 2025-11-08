@@ -32,11 +32,11 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Events
 @app.on_event("startup")
 async def startup_event():
-    await connect_to_mongo()
+    await connect_to_mongo()  # Initialize JSON database
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await close_mongo_connection()
+    await close_mongo_connection()  # Close JSON database
 
 # Routes
 app.include_router(pets.router, prefix="/api/pets", tags=["Pets"])

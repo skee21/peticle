@@ -3,8 +3,7 @@ from pydantic import Field
 from typing import Optional
 
 class Settings(BaseSettings):
-    mongodb_url: str = Field(default="mongodb://localhost:27017", description="MongoDB connection URL")
-    database_name: str = Field(default="petcare", description="Database name")
+    database_dir: str = Field(default="data", description="Directory for JSON database files")
     secret_key: str = Field(default="dev-secret-key-change-in-production", description="Secret key for JWT tokens")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30

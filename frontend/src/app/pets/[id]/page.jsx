@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { usePetStore } from '@/lib/store';
+import { petAPI } from '@/lib/api';
 import { 
-  Calendar, Weight, Heart, Activity, Edit2, 
-  Video, ShoppingBag, MapPin, Clock 
+  Calendar, Scale, Heart, Activity, Edit2, 
+  Video, ShoppingBag, MapPin, Clock, Loader 
 } from 'lucide-react';
 import VideoUploader from '@/components/VideoUploader';
 import ShopSection from '@/components/ShopSection';
@@ -12,17 +13,70 @@ import VetLocator from '@/components/VetLocator';
 
 export default function PetProfile() {
   const params = useParams();
-  const { pets, selectPet, currentPet } = usePetStore();
+  const { pets, selectPet, currentPet, setCurrentPet } = usePetStore();
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    selectPet(params.id);
-  }, [params.id, selectPet]);
+    const fetchPet = async () => {
+      try {
+        setLoading(true);
+        // First try to find in store
+        const petInStore = pets.find(p => p.id === params.id);
+        if (petInStore) {
+          selectPet(params.id);
+        } else {
+          // If not in store, fetch from API
+          const petData = await petAPI.getOne(params.id);
+          // Normalize the pet data to match expected format
+          const normalizedPet = {
+            id: petData.id || petData._id,
+            name: petData.name,
+            species: petData.species,
+            breed: petData.breed,
+            age: petData.age,
+            weight: petData.weight,
+            gender: petData.gender,
+            dob: petData.dob,
+            color: petData.color,
+            description: petData.description,
+            image: petData.image,
+            healthScore: petData.health_score || petData.healthScore || 90,
+            videosAnalyzed: petData.videos_analyzed || petData.videosAnalyzed || 0,
+            appointments: petData.appointments || 0,
+            createdAt: petData.created_at || petData.createdAt,
+            status: 'active'
+          };
+          setCurrentPet(normalizedPet);
+        }
+      } catch (err) {
+        console.error('Error fetching pet:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!currentPet) {
+    if (params.id) {
+      fetchPet();
+    }
+  }, [params.id, pets, selectPet, setCurrentPet]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+        <p className="text-xl text-gray-600">Loading pet...</p>
+      </div>
+    );
+  }
+
+  if (error || !currentPet) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <p className="text-xl text-gray-600">Pet not found</p>
+        {error && <p className="text-sm text-gray-500 mt-2">{error}</p>}
       </div>
     );
   }
@@ -80,12 +134,12 @@ export default function PetProfile() {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <Calendar className="w-5 h-5 text-blue-600 mb-2" />
                   <p className="text-sm text-gray-600">Age</p>
-                  <p className="text-xl font-bold">{currentPet.age} years</p>
+                  <p className="text-xl font-bold">{currentPet.age ? `${currentPet.age} years` : 'Not specified'}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <Weight className="w-5 h-5 text-green-600 mb-2" />
+                  <Scale className="w-5 h-5 text-green-600 mb-2" />
                   <p className="text-sm text-gray-600">Weight</p>
-                  <p className="text-xl font-bold">{currentPet.weight} kg</p>
+                  <p className="text-xl font-bold">{currentPet.weight ? `${currentPet.weight} kg` : 'Not specified'}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <Heart className="w-5 h-5 text-red-600 mb-2" />

@@ -17,12 +17,18 @@ async def save_video(file: UploadFile) -> str:
 
 async def save_image(file: UploadFile, folder: str = "images") -> str:
     """Save uploaded image to disk"""
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(f"uploads/{folder}", unique_filename)
-    
-    async with aiofiles.open(file_path, "wb") as out_file:
-        content = await file.read()
-        await out_file.write(content)
-    
-    return file_path
+    try:
+        # Ensure directory exists
+        os.makedirs(f"uploads/{folder}", exist_ok=True)
+        
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(f"uploads/{folder}", unique_filename)
+        
+        async with aiofiles.open(file_path, "wb") as out_file:
+            content = await file.read()
+            await out_file.write(content)
+        
+        return file_path
+    except Exception as e:
+        raise Exception(f"Error saving image: {str(e)}")
