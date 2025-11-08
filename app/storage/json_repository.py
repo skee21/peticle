@@ -2,6 +2,7 @@ import json
 import os
 import asyncio
 import uuid
+import copy
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from pathlib import Path
@@ -84,7 +85,7 @@ class JSONRepository:
             data = await self._load_data(collection)
             
             if not query:
-                return data
+                return copy.deepcopy(data)
             
             # Simple query matching
             results = []
@@ -95,7 +96,7 @@ class JSONRepository:
                         match = False
                         break
                 if match:
-                    results.append(doc)
+                    results.append(copy.deepcopy(doc))
             
             return results
     

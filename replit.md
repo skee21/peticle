@@ -6,7 +6,7 @@ PetCare is a full-stack web application that provides AI-powered video analysis 
 **Tech Stack:**
 - **Backend**: FastAPI (Python 3.11)
 - **Frontend**: Next.js 14 with React 18
-- **Database**: MongoDB
+- **Database**: JSON file storage (local file-based database)
 - **AI**: OpenAI API for video analysis
 - **Maps**: Google Maps API for vet locator
 
@@ -14,12 +14,13 @@ PetCare is a full-stack web application that provides AI-powered video analysis 
 
 ```
 ├── app/                      # FastAPI backend
-│   ├── models/              # Database models
+│   ├── models/              # Data models
 │   ├── routes/              # API endpoints
 │   ├── schemas/             # Pydantic schemas
 │   ├── services/            # Business logic (AI analysis, storage, video processing)
+│   ├── storage/             # JSON file storage repository
 │   ├── config.py            # Configuration settings
-│   ├── database.py          # MongoDB connection
+│   ├── database.py          # Database abstraction layer
 │   └── main.py              # FastAPI app entry point
 ├── frontend/                # Next.js frontend
 │   ├── src/
@@ -28,11 +29,40 @@ PetCare is a full-stack web application that provides AI-powered video analysis 
 │   │   ├── lib/           # Utilities and API clients
 │   │   └── styles/        # CSS styles
 │   └── package.json
+├── data/                    # JSON data files (pets.json, videos.json)
 └── uploads/                # File storage directory
 ```
 
-## Recent Changes (Migration to Replit)
+## Recent Changes
 
+### Database Migration to JSON File Storage
+**Date**: November 8, 2024
+
+Migrated from MongoDB to JSON file-based storage for simplified deployment and no external dependencies:
+
+1. **JSON Repository Implementation** (`app/storage/json_repository.py`):
+   - Atomic file writes using temp files and rename operations
+   - In-memory caching with asyncio locks for thread-safe concurrent access
+   - Deep copy isolation to prevent cache corruption from route-level mutations
+   - UUID-based ID generation for all entities
+   - Automatic timestamp management (created_at, updated_at)
+
+2. **Database Layer Refactoring** (`app/database.py`):
+   - Created JSON database abstraction layer that mimics MongoDB API
+   - Collection-based access pattern (db.pets, db.videos)
+   - Preserved existing route code structure for minimal disruption
+
+3. **Routes Updated**:
+   - Converted all routes to async/await patterns
+   - Removed MongoDB ObjectId dependencies
+   - All CRUD operations now work with string-based UUIDs
+
+4. **Data Storage**:
+   - Pet data stored in `data/pets.json`
+   - Video analysis data stored in `data/videos.json`
+   - Files created automatically on first write
+
+### Migration to Replit
 **Date**: November 8, 2024
 
 Successfully migrated the PetCare application from Vercel to Replit with the following changes:
@@ -53,14 +83,13 @@ Successfully migrated the PetCare application from Vercel to Replit with the fol
    - Backend: Runs on port 8000 (console) - API server
 
 5. **Dependencies**: Installed all required packages
-   - Python: fastapi, uvicorn, pymongo, openai, opencv-python, pillow, and more
+   - Python: fastapi, uvicorn, openai, opencv-python, pillow, and more
    - Node.js: next, react, axios, zustand, tailwindcss, and more
 
 ## Environment Variables
 
 The following secrets are configured in Replit:
 
-- `MONGODB_URL` - MongoDB connection string
 - `OPENAI_API_KEY` - OpenAI API key for AI analysis
 - `NEXT_PUBLIC_GOOGLE_MAPS_API` - Google Maps API key for vet locator
 - `REPLIT_DOMAINS` - Automatically set by Replit
@@ -93,6 +122,10 @@ When the backend is running, visit `/docs` for interactive API documentation (Sw
 
 - **Separate Frontend/Backend**: Maintains clear separation of concerns and allows independent scaling
 - **Environment-based Configuration**: Uses environment variables for all sensitive data and deployment-specific settings
-- **MongoDB**: NoSQL database chosen for flexible schema and easy scalability
+- **JSON File Storage**: Local file-based database for simplified deployment without external dependencies
+  - Atomic writes prevent data corruption
+  - Asyncio locks ensure thread-safe concurrent access
+  - Deep copy isolation prevents cache mutation issues
+  - Automatic backups via temp file + rename pattern
 - **File Storage**: Local file system for uploads (videos/images) with organized directory structure
 - **CORS Strategy**: Dynamic CORS configuration that works in both development and production environments

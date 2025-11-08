@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Buddy",
+    "species": "dog",
+    "breed": "Golden Retriever",
+    "age": 4,
+    "weight": 32.0,
+    "gender": "male",
+    "dob": null,
+    "color": "golden",
+    "description": null,
+    "videos_analyzed": 0,
+    "appointments": 0,
+    "health_score": 90,
+    "_id": "1e08b7c9-fe9f-4dde-b33e-1cca9fa66135",
+    "created_at": "2025-11-08T08:32:11.052222",
+    "updated_at": "2025-11-08T08:32:22.304816"
+  }
+]
