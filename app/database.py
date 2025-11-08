@@ -1,60 +1,67 @@
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
-from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure
-from app.config import settings
+from app.storage.json_repository import get_repository, JSONRepository
 import logging
 
 logger = logging.getLogger(__name__)
 
-class Database:
-    client: MongoClient = None
-    connected: bool = False
+class JSONDatabase:
+    def __init__(self, repository: JSONRepository):
+        self._repo = repository
     
-db = Database()
+    @property
+    def pets(self):
+        return JSONCollection(self._repo, "pets")
+    
+    @property
+    def videos(self):
+        return JSONCollection(self._repo, "videos")
+    
+    @property
+    def users(self):
+        return JSONCollection(self._repo, "users")
+
+
+class JSONCollection:
+    def __init__(self, repository: JSONRepository, collection_name: str):
+        self._repo = repository
+        self._collection = collection_name
+    
+    async def insert_one(self, document):
+        return await self._repo.insert_one(self._collection, document)
+    
+    async def find(self, query=None):
+        return await self._repo.find(self._collection, query)
+    
+    async def find_one(self, query):
+        return await self._repo.find_one(self._collection, query)
+    
+    async def update_one(self, query, update):
+        return await self._repo.update_one(self._collection, query, update)
+    
+    async def delete_one(self, query):
+        return await self._repo.delete_one(self._collection, query)
+
+
+_db_instance = None
 
 async def get_database():
     """Dependency to get database connection"""
-    if not db.connected or not db.client:
-        from fastapi import HTTPException
-        raise HTTPException(
-            status_code=503,
-            detail="Database is not available. Please ensure MongoDB is running and accessible."
-        )
-    return db.client[settings.database_name]
+    global _db_instance
+    if _db_instance is None:
+        repo = get_repository()
+        _db_instance = JSONDatabase(repo)
+    return _db_instance
 
 async def connect_to_mongo():
-    """Connect to MongoDB with error handling"""
+    """Initialize JSON file storage"""
     try:
-        db.client = MongoClient(
-            settings.mongodb_url,
-            server_api=ServerApi('1'),
-            serverSelectionTimeoutMS=5000,  # 5 second timeout
-            connectTimeoutMS=5000
-        )
-        # Test connection
-        db.client.admin.command('ping')
-        db.connected = True
-        logger.info("✅ Connected to MongoDB")
-        print("✅ Connected to MongoDB")
-    except (ServerSelectionTimeoutError, ConnectionFailure) as e:
-        db.connected = False
-        logger.warning(f"⚠️  Could not connect to MongoDB: {e}")
-        logger.warning(f"⚠️  MongoDB URL: {settings.mongodb_url}")
-        logger.warning("⚠️  The application will start but database operations will fail.")
-        print(f"⚠️  Warning: Could not connect to MongoDB at {settings.mongodb_url}")
-        print("⚠️  Please ensure MongoDB is running. The app will start but database features won't work.")
+        repo = get_repository()
+        logger.info("✅ JSON file storage initialized")
+        print("✅ JSON file storage initialized")
     except Exception as e:
-        db.connected = False
-        logger.error(f"❌ Unexpected error connecting to MongoDB: {e}")
-        print(f"❌ Error connecting to MongoDB: {e}")
+        logger.error(f"❌ Error initializing storage: {e}")
+        print(f"❌ Error initializing storage: {e}")
 
 async def close_mongo_connection():
-    """Close MongoDB connection"""
-    if db.client:
-        try:
-            db.client.close()
-            logger.info("❌ Closed MongoDB connection")
-            print("❌ Closed MongoDB connection")
-        except Exception as e:
-            logger.error(f"Error closing MongoDB connection: {e}")
-    db.connected = False
+    """Cleanup JSON storage (if needed)"""
+    logger.info("✅ JSON storage cleanup complete")
+    print("✅ JSON storage cleanup complete")
