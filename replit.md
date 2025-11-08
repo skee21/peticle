@@ -74,9 +74,11 @@ Successfully migrated the PetCare application from Vercel to Replit with the fol
    - Modified `app/main.py` to dynamically read `REPLIT_DOMAINS` environment variable
    - Added localhost:5000 to allowed origins
 
-3. **API URL Configuration**: Changed frontend to use environment variables
+3. **API URL Configuration**: Configured API proxy for frontend-backend communication
    - Updated `frontend/src/lib/api.js` to use `NEXT_PUBLIC_API_URL`
-   - Created `frontend/.env.local` with local API URL
+   - Created `frontend/.env.local` with `/api` as the API URL
+   - Added Next.js rewrites in `next.config.js` to proxy `/api/*` requests to backend `localhost:8000/api/*`
+   - This allows the frontend (port 5000) to communicate with the backend (port 8000) through Next.js proxy
 
 4. **Workflows Setup**:
    - Frontend: Runs on port 5000 (webview) - User-facing interface
