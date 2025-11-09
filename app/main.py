@@ -11,16 +11,26 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Get Replit domains for CORS
-replit_domains = os.getenv("REPLIT_DOMAINS", "").split(",")
+# Get allowed origins from environment
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5000",
-    "http://127.0.0.1:5000"
+    "http://127.0.0.1:5000",
 ]
 
-# Add Replit domains with https
+# Add Vercel preview and production domains
+vercel_url = os.getenv("VERCEL_URL")
+if vercel_url:
+    allowed_origins.append(f"https://{vercel_url}")
+
+# Add custom frontend URL if set
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
+# Get Replit domains for CORS (if using Replit)
+replit_domains = os.getenv("REPLIT_DOMAINS", "").split(",")
 for domain in replit_domains:
     if domain.strip():
         allowed_origins.append(f"https://{domain.strip()}")

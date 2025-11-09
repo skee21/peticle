@@ -1,0 +1,44 @@
+# Exclude large directories from Vercel deployment
+node_modules/
+.next/
+uploads/
+data/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+.vercel
+.git/
+*.log
+.DS_Store
+Thumbs.db
+
+# Frontend specific
+frontend/node_modules/
+frontend/.next/
+frontend/uploads/
+frontend/public/app/
+
+# Python specific
+app/__pycache__/
+app/**/__pycache__/
+*.pyc
+uv.lock
+pyproject.toml
+.replit
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+

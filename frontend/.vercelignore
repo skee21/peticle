@@ -1,0 +1,9 @@
+# Exclude from Vercel frontend deployment
+node_modules/
+.next/
+uploads/
+public/app/
+*.log
+.DS_Store
+Thumbs.db
+

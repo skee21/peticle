@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16",
-    "axios": "^1",
     "lucide-react": "^0.263",
     "next": "^14",
     "react": "^18",

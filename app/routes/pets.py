@@ -10,53 +10,67 @@ router = APIRouter()
 @router.post("", response_model=dict)
 async def create_pet(pet: PetCreate, db=Depends(get_database)):
     """Create a new pet profile"""
-    print(f"POST /api/pets - Received request to create pet: {pet.name}")
     try:
         # Use model_dump() for Pydantic v2, fallback to dict() for v1
         if hasattr(pet, 'model_dump'):
-            pet_dict = pet.model_dump()
+            pet_dict = pet.model_dump(exclude_unset=True)
         else:
-            pet_dict = pet.dict()
+            pet_dict = pet.dict(exclude_unset=True)
         
-        print(f"Pet dict created: {list(pet_dict.keys())}")
+        # Remove None values to avoid issues
+        pet_dict = {k: v for k, v in pet_dict.items() if v is not None}
         
+        # Set default values
         pet_dict["videos_analyzed"] = 0
         pet_dict["appointments"] = 0
         pet_dict["health_score"] = 90
         
-        print("Calling insert_one...")
+        # Insert pet
         result = await db.pets.insert_one(pet_dict)
-        print(f"Insert result: {result}")
         
         return {
             "id": str(result["inserted_id"]),
             "message": "Pet created successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
-        print(f"Error creating pet: {e}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Failed to create pet: {str(e)}")
+        error_msg = str(e)
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to create pet: {error_msg}")
 
 @router.get("", response_model=List[dict])
 async def get_all_pets(db=Depends(get_database)):
     """Get all pets"""
-    pets_data = await db.pets.find()
-    pets = []
-    for pet in pets_data:
-        pet["id"] = str(pet.pop("_id"))
-        pets.append(pet)
-    return pets
+    try:
+        pets_data = await db.pets.find()
+        pets = []
+        for pet in pets_data:
+            pet_id = pet.pop("_id", None)
+            pet["id"] = str(pet_id) if pet_id else None
+            pets.append(pet)
+        return pets
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch pets: {str(e)}")
 
 @router.get("/{pet_id}", response_model=dict)
 async def get_pet(pet_id: str, db=Depends(get_database)):
     """Get a specific pet by ID"""
-    pet = await db.pets.find_one({"_id": pet_id})
-    if not pet:
-        raise HTTPException(status_code=404, detail="Pet not found")
-    
-    pet["id"] = str(pet.pop("_id"))
-    return pet
+    try:
+        pet = await db.pets.find_one({"_id": pet_id})
+        if not pet:
+            raise HTTPException(status_code=404, detail="Pet not found")
+        
+        pet_id_value = pet.pop("_id", None)
+        pet["id"] = str(pet_id_value) if pet_id_value else pet_id
+        return pet
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch pet: {str(e)}")
 
 @router.put("/{pet_id}", response_model=dict)
 async def update_pet(
@@ -97,12 +111,17 @@ async def update_pet(
 @router.delete("/{pet_id}")
 async def delete_pet(pet_id: str, db=Depends(get_database)):
     """Delete a pet"""
-    result = await db.pets.delete_one({"_id": pet_id})
-    
-    if result["deleted_count"] == 0:
-        raise HTTPException(status_code=404, detail="Pet not found")
-    
-    return {"message": "Pet deleted successfully"}
+    try:
+        result = await db.pets.delete_one({"_id": pet_id})
+        
+        if result["deleted_count"] == 0:
+            raise HTTPException(status_code=404, detail="Pet not found")
+        
+        return {"message": "Pet deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete pet: {str(e)}")
 
 @router.post("/{pet_id}/image")
 async def upload_pet_image(
